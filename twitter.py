@@ -5,6 +5,9 @@ import tweepy
 import re
 from textblob import TextBlob
 from wordcloud import WordCloud
+import csv
+import time
+
 
 import matplotlib.pyplot as plt
 
@@ -100,7 +103,7 @@ class TwitterApi():
         all_text = ''
         try: 
             # call twitter api to fetch tweets 
-            fetched_tweets = self.search_for_tweets_by_handle(handle)['statuses']
+            fetched_tweets = self.search_for_tweets_by_handle(handle, 100)['statuses']
   
             # parsing tweets one by one 
             for tweet in fetched_tweets: 
@@ -140,9 +143,96 @@ class TwitterApi():
         plt.axis('off')
         plt.show()
 
+    def generate_statistics(self,tweets):
+        total = 0
+        positive = 0
+        negative = 0
+        neutral = 0
+        for tweet in tweets:
+            sentiment = tweet['sentiment']
+            if sentiment == 'positive':
+                positive += 1
+            elif sentiment == 'negative':
+                negative += 1
+            elif sentiment == 'neutral':
+                neutral += 1
+            total += 1
+
+
+        total_negative = str(round((negative/total) * 100, 2))
+        total_positive = str(round((positive / total) * 100, 2))
+        total_neutral = str(round((neutral / total) * 100, 2))
+
+        print('Negative tweet percentage: ' + total_negative + "\n")
+        print('Positive tweet percentage: ' + total_positive + "\n")
+        print('Neutral tweet percentage: ' + total_neutral + "\n")
+
+
+    def gather_tweets(self, handle):
+
+        data_list = self.get_tweets(handle)[0]
+        csv_file = handle+'.csv'
+
+        with open(csv_file, 'a', newline = '') as myCSVFile:
+            csvWriter = csv.writer(myCSVFile, delimiter=',', dialect='excel', quoting=csv.QUOTE_ALL)
+            for data in data_list:
+                if data != {}:
+                    output = []
+                    output.append(self.clean_tweet(data['text']))
+                    output.append(data['sentiment'])
+                    csvWriter.writerow(output)
+
+    def build_tweets_and_sentiment_from_csv(self,filename):
+        f = open(filename)
+        csv_f = csv.reader(f)
+        targets = []
+        all_text = ''
+        for row in csv_f:
+            data = dict()
+            
+            data['text'] = row[0]
+            data['sentiment'] = row[1]
+            targets.append(data)
+            all_text += self.clean_tweet(data['text'])
+        
+        return targets, all_text
 
 twitter = TwitterApi()
 
-tweets, all_text = twitter.get_tweets('@realDonaldTrump')
+gather_twitter_data = input('Do you want to gather twitter data for an hour? (Y or N) ')
 
-twitter.generate_word_cloud(all_text)
+
+if gather_twitter_data == 'Y' or gather_twitter_data == 'y':
+    handle = input('What is the twitter handle you want to gather data for? (include the @) ')
+
+    if handle != '':
+        fifteen_mins = 900
+        one_hour = 3600 * 2 #TODO - Change this to be an hour...
+        while(one_hour > 0):
+
+            twitter.gather_tweets(str(handle))
+            one_hour -= fifteen_mins
+            print("Data gathered.... sleeping for 15 mins.\n")
+            time.sleep(fifteen_mins)
+        print("Done gathering data for - " + str(handle) + "\n")
+    else:
+        print('Please input a twitter handle')
+
+#add reading CSV here
+determine_file = input('Which file do you want to run analysis on? - ')
+tweets = []
+
+if determine_file != None:
+    try:
+        tweets, all_text = twitter.build_tweets_and_sentiment_from_csv(determine_file)
+    except Exception as e:
+        print("Error opening - " + str(determine_file) +" check file exists in the project directory")
+
+print("Running analysis...\n")
+
+stats = twitter.generate_statistics(tweets)
+
+display_word_cloud = input('Do you want to display a word cloud of the most common words in all tweets? (Y or N) ')
+
+if display_word_cloud == 'y' or display_word_cloud == 'Y':
+    twitter.generate_word_cloud(all_text)
