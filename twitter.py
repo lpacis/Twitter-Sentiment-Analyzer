@@ -208,14 +208,14 @@ def main()
         handle = input('What is the twitter handle you want to gather data for? (include the @) ')
     
         if handle != '':
-            fifteen_mins = 900
-            one_hour = 3600 * 2 #TODO - Change this to be an hour...
+            one_min = 60
+            one_hour = 3600 #TODO - Change this to be an hour...
             while(one_hour > 0):
     
                 twitter.gather_tweets(str(handle))
-                one_hour -= fifteen_mins
-                print("Data gathered.... sleeping for 15 mins.\n")
-                time.sleep(fifteen_mins)
+                one_hour -= one_min
+                print("Data gathered.... sleeping for a minute.\n")
+                time.sleep(one_min)
             print("Done gathering data for - " + str(handle) + "\n")
         else:
             print('Please input a twitter handle')
