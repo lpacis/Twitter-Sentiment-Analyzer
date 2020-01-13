@@ -26,4 +26,5 @@ Quick and easy way to do sentiment analysis for a given twitter handle.
   
   Then there is a prompt to display a word cloud of the most used words throughout all of the tweets.
   
+  NOTE - There are rate limits on Twitters API - so be sure not to make too many requests - or they will blacklist your account.
   
