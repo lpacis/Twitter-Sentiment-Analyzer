@@ -163,9 +163,9 @@ class TwitterApi():
         total_positive = str(round((positive / total) * 100, 2))
         total_neutral = str(round((neutral / total) * 100, 2))
 
-        print('Negative tweet percentage: ' + total_negative + "\n")
-        print('Positive tweet percentage: ' + total_positive + "\n")
-        print('Neutral tweet percentage: ' + total_neutral + "\n")
+        print('Negative tweet percentage: ' + total_negative + "%\n")
+        print('Positive tweet percentage: ' + total_positive + "%\n")
+        print('Neutral tweet percentage: ' + total_neutral + "%\n")
 
 
     def gather_tweets(self, handle):
@@ -189,7 +189,7 @@ class TwitterApi():
         all_text = ''
         for row in csv_f:
             data = dict()
-            if data['text'] != 'RT': #add in check for RT - we dont want to count retweets of images.
+            if row[0] != 'RT': #add in check for RT - we dont want to count retweets of images.
                 data['text'] = row[0]
                 data['sentiment'] = row[1]
                 targets.append(data)
@@ -197,7 +197,7 @@ class TwitterApi():
         
         return targets, all_text
     
-def main()
+def main():
 
     twitter = TwitterApi()
     
