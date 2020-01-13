@@ -96,7 +96,7 @@ class TwitterApi():
 
     def get_tweets(self, handle): 
         ''' 
-        Main function to fetch tweets and parse them. 
+        Function to fetch tweets and parse them.
         '''
         # empty list to store parsed tweets 
         tweets = [] 
@@ -109,22 +109,22 @@ class TwitterApi():
             for tweet in fetched_tweets: 
                 # empty dictionary to store required params of a tweet 
                 parsed_tweet = {} 
-  
-                # saving text of tweet 
-                parsed_tweet['text'] = tweet['text']
-                # saving sentiment of tweet 
-                parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet['text']) 
-  
-                # appending parsed tweet to tweets list 
-                if  tweet['retweet_count'] > 0: 
-                    # if tweet has retweets, ensure that it is appended only once 
-                    if parsed_tweet not in tweets: 
-                        tweets.append(parsed_tweet)
-                else: 
-                    tweets.append(parsed_tweet) 
-                all_text += self.clean_tweet(tweet['text'])
+                if tweet['text'] != 'RT':
+                    # saving text of tweet 
+                    parsed_tweet['text'] = tweet['text']
+                    # saving sentiment of tweet 
+                    parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet['text']) 
+      
+                    # appending parsed tweet to tweets list 
+                    if  tweet['retweet_count'] > 0: 
+                        # if tweet has retweets, ensure that it is appended only once 
+                        if parsed_tweet not in tweets: 
+                            tweets.append(parsed_tweet)
+                    else: 
+                        tweets.append(parsed_tweet) 
+                    all_text += self.clean_tweet(tweet['text'])
             
-            # return parsed tweets 
+            # return parsed tweets and all of the text.
             return tweets, all_text
   
         except tweepy.TweepError as e: 
@@ -176,7 +176,7 @@ class TwitterApi():
         with open(csv_file, 'a', newline = '') as myCSVFile:
             csvWriter = csv.writer(myCSVFile, delimiter=',', dialect='excel', quoting=csv.QUOTE_ALL)
             for data in data_list:
-                if data != {}:
+                if data != {} and data['text'] != 'RT': #add in check for RT - we dont want to count retweets of images.
                     output = []
                     output.append(self.clean_tweet(data['text']))
                     output.append(data['sentiment'])
@@ -189,50 +189,54 @@ class TwitterApi():
         all_text = ''
         for row in csv_f:
             data = dict()
-            
-            data['text'] = row[0]
-            data['sentiment'] = row[1]
-            targets.append(data)
-            all_text += self.clean_tweet(data['text'])
+            if data['text'] != 'RT': #add in check for RT - we dont want to count retweets of images.
+                data['text'] = row[0]
+                data['sentiment'] = row[1]
+                targets.append(data)
+                all_text += self.clean_tweet(data['text'])
         
         return targets, all_text
+    
+def main()
 
-twitter = TwitterApi()
-
-gather_twitter_data = input('Do you want to gather twitter data for an hour? (Y or N) ')
-
-
-if gather_twitter_data == 'Y' or gather_twitter_data == 'y':
-    handle = input('What is the twitter handle you want to gather data for? (include the @) ')
-
-    if handle != '':
-        fifteen_mins = 900
-        one_hour = 3600 * 2 #TODO - Change this to be an hour...
-        while(one_hour > 0):
-
-            twitter.gather_tweets(str(handle))
-            one_hour -= fifteen_mins
-            print("Data gathered.... sleeping for 15 mins.\n")
-            time.sleep(fifteen_mins)
-        print("Done gathering data for - " + str(handle) + "\n")
-    else:
-        print('Please input a twitter handle')
-
-#add reading CSV here
-determine_file = input('Which file do you want to run analysis on? - ')
-tweets = []
-
-if determine_file != None:
-    try:
-        tweets, all_text = twitter.build_tweets_and_sentiment_from_csv(determine_file)
-    except Exception as e:
-        print("Error opening - " + str(determine_file) +" check file exists in the project directory")
-
-print("Running analysis...\n")
-
-stats = twitter.generate_statistics(tweets)
-
-display_word_cloud = input('Do you want to display a word cloud of the most common words in all tweets? (Y or N) ')
-
-if display_word_cloud == 'y' or display_word_cloud == 'Y':
-    twitter.generate_word_cloud(all_text)
+    twitter = TwitterApi()
+    
+    gather_twitter_data = input('Do you want to gather twitter data for an hour? (Y or N) ')
+    
+    
+    if gather_twitter_data == 'Y' or gather_twitter_data == 'y':
+        handle = input('What is the twitter handle you want to gather data for? (include the @) ')
+    
+        if handle != '':
+            fifteen_mins = 900
+            one_hour = 3600 * 2 #TODO - Change this to be an hour...
+            while(one_hour > 0):
+    
+                twitter.gather_tweets(str(handle))
+                one_hour -= fifteen_mins
+                print("Data gathered.... sleeping for 15 mins.\n")
+                time.sleep(fifteen_mins)
+            print("Done gathering data for - " + str(handle) + "\n")
+        else:
+            print('Please input a twitter handle')
+    
+    #add reading CSV here
+    determine_file = input('Which file do you want to run analysis on? - ')
+    tweets = []
+    
+    if determine_file != None:
+        try:
+            tweets, all_text = twitter.build_tweets_and_sentiment_from_csv(determine_file)
+        except Exception as e:
+            print("Error opening - " + str(determine_file) +" check file exists in the project directory")
+    
+    print("Running analysis...\n")
+    
+    stats = twitter.generate_statistics(tweets)
+    
+    display_word_cloud = input('Do you want to display a word cloud of the most common words in all tweets? (Y or N) ')
+    
+    if display_word_cloud == 'y' or display_word_cloud == 'Y':
+        twitter.generate_word_cloud(all_text)
+        
+main()
